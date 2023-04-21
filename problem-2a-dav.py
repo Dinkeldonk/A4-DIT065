@@ -1,3 +1,4 @@
+#Ett första utkast
 import findspark
 findspark.init()
 from math import sqrt
