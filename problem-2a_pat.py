@@ -1,7 +1,7 @@
-import findspark
+import findspark #type: ignore
 findspark.init()
 from math import sqrt
-from pyspark import SparkContext
+from pyspark import SparkContext #type: ignore
 import math
 
 sc = SparkContext(master = 'local[4]')
