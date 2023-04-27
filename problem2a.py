@@ -13,15 +13,13 @@ def extract_value(line):
     value = float(value)
     return value, value**2, 1, value, value
 
-def sum_vals(a, b):
+def sum_and_minmax(a, b):
     v1, s1, c1, minv1, maxv1 = a
     v2, s2, c2, minv2, maxv2 = b
     return v1 + v2, s1 + s2, c1 + c2, min(minv1,minv2), max(maxv1, maxv2)
 
-sums_and_count = data.map(extract_value).reduce(sum_vals)
-
-print(sums_and_count)
-val_sum, sq_sum, N, minv, maxv = sums_and_count 
+sums_and_minmax = data.map(extract_value).reduce(sum_and_minmax)
+val_sum, sq_sum, N, minv, maxv = sums_and_minmax 
 mean = val_sum / N
 var = sq_sum/N - mean**2
 std = math.sqrt(var)
