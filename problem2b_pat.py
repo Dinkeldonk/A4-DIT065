@@ -52,4 +52,4 @@ if __name__ == '__main__':
     print(f'{mean:.4f}\t{std:.4f}\t{minv:.4f}\t{maxv:.4f}\n')
 
     with open(args.timing_file, 'a') as f:
-        f.write(f'{args.workers} {program_time}')
+        f.write(f'{args.workers} {program_time}\n')
