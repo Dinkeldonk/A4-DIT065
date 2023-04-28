@@ -14,13 +14,11 @@ class MRKmeans(MRJob):
                 centroid = [float(x) for x in line.strip().split()]
                 centroids.append(centroid)
         return centroids
- 
-    def mapper_init(self):
-        self.centroids = self.get_centroids()
+   
 
     def mapper(self, _, line):
         point = list(map(float, line.strip().split()))
-        centroids = self.centroids
+        centroids = self.get_centroids()
         min_distance = float('inf')
         closest_centroid = None
 
@@ -35,8 +33,8 @@ class MRKmeans(MRJob):
 
     def reducer(self, centroid_id, points):
         num_points = 0
-        #centroids = self.get_centroids()
-        new_centroid = [0.0, 0.0] 
+        centroids = self.get_centroids()
+        new_centroid = [0.0] * len(centroids[0])
         for point in points:
             num_points += 1
             for i in range(len(point)):
