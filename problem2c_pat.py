@@ -16,7 +16,6 @@ def sum_and_minmax(a, b):
     v2, s2, c2, minv2, maxv2 = b
     return v1 + v2, s1 + s2, c1 + c2, min(minv1,minv2), max(maxv1, maxv2)
 
-
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--workers', '-w', default=1, type=int)
@@ -25,6 +24,7 @@ if __name__ == '__main__':
                         help='An integer specifying which data file to use. \
                             One of [1,10,100,1000]',
                         choices=[1,10,100,1000])
+    parser.add_argument('--bins', '-b', default=10)
     #parser.add_argument('--timing_file', '-t', default='prob2b_results',
     #                    help='The filename to append timing results to.')
     args = parser.parse_args()
@@ -37,7 +37,9 @@ if __name__ == '__main__':
         filename = f'/data/2023-DAT470-DIT065/data-assignment-3-{args.file_choice}M.dat'
     data = sc.textFile(filename)
 
-    val_sum, sq_sum, N, minv, maxv = data.map(extract_value).reduce(sum_and_minmax)
+    values_RDD = data.map(extract_value)
+
+    val_sum, sq_sum, N, minv, maxv = values_RDD.reduce(sum_and_minmax)
     mean = val_sum / N
     var = sq_sum/N - mean**2
     std = math.sqrt(var)
@@ -50,6 +52,13 @@ if __name__ == '__main__':
     bin_width = (maxv - minv) / num_bins
     bin_edges = [minv + i * bin_width for i in range(num_bins+1)]
     
-    # hist_counts = data.map(
+    def map_to_bin(a, minv, bin_width):
+        value = a[0]
+        bin_idx = int((value - minv) // bin_width)
+        return bin_idx, 1
+
+    bin_counts = values_RDD.map(lambda t: (int((t[0]-minv)//bin_width), 1)).reduceByKey(lambda a,b: a+b)
+    
+    print(bin_counts.collect())
     
     
