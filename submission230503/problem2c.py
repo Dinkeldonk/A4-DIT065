@@ -4,6 +4,7 @@ from math import sqrt
 from pyspark import SparkContext #type: ignore
 import math
 import argparse
+import time
 
 def extract_value(line):
     _, _, value = line.split("\t")
@@ -24,10 +25,12 @@ if __name__ == '__main__':
                             One of [1,10,100,1000]',
                         choices=[1,10,100,1000])
     parser.add_argument('--bins', '-b', default=10)
+    #parser.add_argument('--timing_file', '-t', default='prob2b_results',
+    #                    help='The filename to append timing results to.')
     args = parser.parse_args()
-    
-    sc = SparkContext(master = f'local[{args.workers}]')
 
+    sc = SparkContext(master = f'local[{args.workers}]')
+    
     if args.file_choice == 1000:
         filename = f'/data/2023-DAT470-DIT065/data-assignment-3-1B.dat'
     else:
@@ -35,44 +38,28 @@ if __name__ == '__main__':
     data = sc.textFile(filename)
 
     values_RDD = data.map(extract_value)
-    
+
     val_sum, sq_sum, N, minv, maxv = values_RDD.reduce(sum_and_minmax)
     mean = val_sum / N
     var = sq_sum/N - mean**2
     std = math.sqrt(var)
-
-    print('Mean\tstd\tmin\tmax')
-    print(f'{mean:.4f}\t{std:.4f}\t{minv:.4f}\t{maxv:.4f}')
     
+    print('Mean\tstd\tmin\tmax')
+    print(f'{mean:.4f}\t{std:.4f}\t{minv:.4f}\t{maxv:.4f}\n')
+
     # compute bins using min- and max-values.
     num_bins = 10
     bin_width = (maxv - minv) / num_bins
     bin_edges = [minv + i * bin_width for i in range(num_bins+1)]
+    
+    def map_to_bin(a, minv, bin_width):
+        value = a[0]
+        bin_idx = int((value - minv) // bin_width)
+        return bin_idx, 1
 
     bin_counts_RDD = values_RDD.map(lambda t: (int((t[0]-minv)//bin_width), 1)).reduceByKey(lambda a,b: a+b)
     
     bin_counts = bin_counts_RDD.collect()
     print(bin_counts)
-    print(bin_edges)
-    print('bin_width:', bin_width)
-
-    # Compute the median using bin counts
-    # the median will be in the bin containing the (N/2)th value
-    middle_value_idx = N / 2
-    val_count = 0
-    for i, count in bin_counts:
-        val_count += count
-        if val_count >= middle_value_idx:
-            median_bin_idx = i
-            break
     
-    print('med_bin_idx:', median_bin_idx)
-    overflow = val_count - (N // 2)
-    print('overflow', overflow)
-    proportion = overflow / bin_counts[median_bin_idx][1]
-    print('proportion:', proportion)
-    print('bin_edges[median_bin_idx+1]:', bin_edges[median_bin_idx+1])
-    median = bin_edges[median_bin_idx+1] - proportion * bin_width
     
-
-    print("Median: ", median)
