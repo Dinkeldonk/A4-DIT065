@@ -34,9 +34,9 @@ if __name__ == '__main__':
         filename = f'/data/2023-DAT470-DIT065/data-assignment-3-{args.file_choice}M.dat'
     data = sc.textFile(filename)
 
-    sorted_values_RDD = data.map(extract_value).sortBy(lambda v: v[0])
+    values_RDD = data.map(extract_value)
     
-    val_sum, sq_sum, N, minv, maxv = sorted_values_RDD.reduce(sum_and_minmax)
+    val_sum, sq_sum, N, minv, maxv = values_RDD.reduce(sum_and_minmax)
     mean = val_sum / N
     var = sq_sum/N - mean**2
     std = math.sqrt(var)
@@ -44,17 +44,35 @@ if __name__ == '__main__':
     print('Mean\tstd\tmin\tmax')
     print(f'{mean:.4f}\t{std:.4f}\t{minv:.4f}\t{maxv:.4f}')
     
-    sorted_vals = data.map(extract_value).sortBy(lambda v: v[0]).collect()
+    # compute bins using min- and max-values.
+    num_bins = 10
+    bin_width = (maxv - minv) / num_bins
+    bin_edges = [minv + i * bin_width for i in range(num_bins+1)]
 
-    #sorted_vals = sc.parallelize(data).sortBy(lambda v: v[2]).collect()
+    bin_counts_RDD = values_RDD.map(lambda t: (int((t[0]-minv)//bin_width), 1)).reduceByKey(lambda a,b: a+b)
+    
+    bin_counts = bin_counts_RDD.collect()
+    print(bin_counts)
+    print(bin_edges)
+    print('bin_width:', bin_width)
 
-    #print(sorted_vals)
+    # Compute the median using bin counts
+    # the median will be in the bin containing the (N/2)th value
+    middle_value_idx = N / 2
+    val_count = 0
+    for i, count in bin_counts:
+        val_count += count
+        if val_count >= middle_value_idx:
+            median_bin_idx = i
+            break
+    
+    print('med_bin_idx:', median_bin_idx)
+    overflow = val_count - (N // 2)
+    print('overflow', overflow)
+    proportion = overflow / bin_counts[median_bin_idx][1]
+    print('proportion:', proportion)
+    print('bin_edges[median_bin_idx+1]:', bin_edges[median_bin_idx+1])
+    median = bin_edges[median_bin_idx+1] - proportion * bin_width
+    
 
-    if N % 2 == 0:
-        med = (sorted_vals[N//2 - 1][0] + sorted_vals[N//2][0]) / 2
-        #med = (sorted_vals[N//2 - 1][2] + sorted_vals[N//2][2]) / 2
-    else:
-        med = sorted_vals[N//2][0]
-        #med = sorted_vals[N//2][2]
-
-    print("Median: ", med)
+    print("Median: ", median)

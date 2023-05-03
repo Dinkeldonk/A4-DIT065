@@ -57,8 +57,9 @@ if __name__ == '__main__':
         bin_idx = int((value - minv) // bin_width)
         return bin_idx, 1
 
-    bin_counts = values_RDD.map(lambda t: (int((t[0]-minv)//bin_width), 1)).reduceByKey(lambda a,b: a+b)
+    bin_counts_RDD = values_RDD.map(lambda t: (int((t[0]-minv)//bin_width), 1)).reduceByKey(lambda a,b: a+b)
     
-    print(bin_counts.collect())
+    bin_counts = bin_counts_RDD.collect()
+    print(bin_counts)
     
     
